@@ -1,19 +1,7 @@
 "use client";
 
-import pako from "pako";
 import { useState, useEffect } from "react";
-
-function compress(text : string) : string {
-  const compressed = pako.deflate(text);
-  return btoa(String.fromCharCode(...compressed)); // binary (Uint8) to ASCII
-}
-
-function decompress(encoded : string) : string{
-  const binary = atob(encoded); // ASCII to binary (Uint8), needs further conversion (to binary)
-
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0)); // binary string to Uint8
-  return pako.inflate(bytes, { to: "string" }); // decompress and convert to string
-}
+import { compress, decompress } from "../app/lib/index";
 
 export default function Home() {
   const [text, setText] = useState("");
@@ -23,7 +11,7 @@ export default function Home() {
      const hash = window.location.hash.slice(1); // remove the '#' character
      const decoded = decompress(hash)
 
-     
+
      // eslint-disable-next-line react-hooks/set-state-in-effect
      setText(decoded);
   }, []);
