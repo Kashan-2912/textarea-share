@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createEditor, Transforms, Text, Descendant } from "slate";
 import { Slate, Editable, withReact } from "slate-react";
 import { withHistory } from "slate-history";
@@ -82,9 +82,12 @@ function deserializeFromUrl(hash: string): Descendant[] | null {
 export default function Home() {
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
-  const [initialValue, setInitialValue] = useState<Descendant[]>(EMPTY_VALUE);
+  // initialValueRef is set once in the effect before Slate mounts.
+  // Using a ref avoids the React batching race where setValue + setMounted
+  // land in the same render, causing Slate to see EMPTY_VALUE on first mount.
+  const initialValueRef = useRef<Descendant[]>(EMPTY_VALUE);
   const [value, setValue] = useState<Descendant[]>(EMPTY_VALUE);
-  const [loaded, setLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [color, setColor] = useState("#000000");
 
   /* -------------------- Load From URL -------------------- */
@@ -95,20 +98,21 @@ export default function Home() {
       try {
         const nodes = deserializeFromUrl(hash);
         if (nodes) {
-          setInitialValue(nodes);
+          // Set ref synchronously — Slate will read this on its first render.
+          initialValueRef.current = nodes;
           setValue(nodes);
         }
       } catch {
         // ignore bad hash
       }
     }
-    setLoaded(true);
+    setMounted(true);
   }, []);
 
   /* -------------------- Save To URL -------------------- */
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!mounted) return;
     try {
       const isEmpty =
         !Array.isArray(value) ||
@@ -127,7 +131,7 @@ export default function Home() {
     } catch {
       // never break UI
     }
-  }, [value, loaded]);
+  }, [value, mounted]);
 
   /* -------------------- Formatting -------------------- */
 
@@ -188,27 +192,29 @@ export default function Home() {
         </Btn>
       </div>
 
-        <Slate
-          editor={editor}
-          initialValue={initialValue}
-          onChange={(newValue) => {
-            if (Array.isArray(newValue)) {
-              setValue(newValue);
-            }
-          }}
-        >
-        <Editable
-          renderLeaf={(props) => <Leaf {...props} />}
-          style={{
-            minHeight: 300,
-            padding: 12,
-            border: "1px solid #ccc",
-            borderRadius: 8,
-          }}
-          spellCheck
-          autoFocus
-        />
-      </Slate>
+        {mounted && (
+          <Slate
+            editor={editor}
+            initialValue={initialValueRef.current}
+            onChange={(newValue) => {
+              if (Array.isArray(newValue)) {
+                setValue(newValue);
+              }
+            }}
+          >
+          <Editable
+            renderLeaf={(props) => <Leaf {...props} />}
+            style={{
+              minHeight: 300,
+              padding: 12,
+              border: "1px solid #ccc",
+              borderRadius: 8,
+            }}
+            spellCheck
+            autoFocus
+          />
+        </Slate>
+        )}
     </main>
   );
 }
