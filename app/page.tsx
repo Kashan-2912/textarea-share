@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { compress, decompress } from "../app/lib/index";
 
 export default function Home() {
@@ -102,7 +103,7 @@ export default function Home() {
           minHeight: 100,
           background: "#fafafa"
         }}>
-          <ReactMarkdown>{text}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeRaw]}>{text}</ReactMarkdown>
         </div>
       </div>
     </main>
