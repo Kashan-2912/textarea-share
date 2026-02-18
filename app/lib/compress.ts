@@ -1,7 +1,6 @@
-import Pako from "pako";
+import LZString from "lz-string";
 
 export const compress = (text : string) : string => {
-  const compressed = Pako.deflate(text);
-  return btoa(String.fromCharCode(...compressed)); // binary (Uint8) to ASCII
+  return LZString.compressToEncodedURIComponent(text);
 }
 
