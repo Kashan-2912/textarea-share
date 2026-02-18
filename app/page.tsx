@@ -1,6 +1,8 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import { compress, decompress } from "../app/lib/index";
 
 export default function Home() {
@@ -33,7 +35,7 @@ export default function Home() {
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Type something..."
+        placeholder="Type something... (Markdown supported)"
         style={{
           width: "100%",
           height: "300px",
@@ -41,6 +43,18 @@ export default function Home() {
           fontSize: "16px",
         }}
       />
+      <div style={{ marginTop: 32 }}>
+        <h2>Markdown Preview</h2>
+        <div style={{
+          border: "1px solid #ccc",
+          borderRadius: 8,
+          padding: 16,
+          minHeight: 100,
+          background: "#fafafa"
+        }}>
+          <ReactMarkdown>{text}</ReactMarkdown>
+        </div>
+      </div>
     </main>
   );
 }
