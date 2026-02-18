@@ -8,6 +8,7 @@ import { compress, decompress } from "../app/lib/index";
 
 export default function Home() {
   const [text, setText] = useState("");
+  const [color, setColor] = useState("#000000");
 
   // runs on first render, decompresses text from URL
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function Home() {
   return (
     <main style={{ padding: 40 }}>
       <h1>Live URL Compressor</h1>
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
         <button
           type="button"
           title="Bold"
@@ -80,6 +81,22 @@ export default function Home() {
           style={{ textDecoration: "underline", marginRight: 4 }}
         >
           U
+        </button>
+        {/* Color Picker */}
+        <input
+          type="color"
+          value={color}
+          onChange={e => setColor(e.target.value)}
+          title="Pick text color"
+          style={{ width: 28, height: 28, border: "none", background: "none", cursor: "pointer" }}
+        />
+        <button
+          type="button"
+          title="Apply color to selected text"
+          onClick={() => applyMarkdown(`<span style=\"color: ${color}\">`, "</span>")}
+          style={{ border: "1px solid #ccc", borderRadius: 4, padding: "2px 8px", background: color, color: "#fff", fontWeight: "bold", cursor: "pointer" }}
+        >
+          A
         </button>
       </div>
       <textarea
