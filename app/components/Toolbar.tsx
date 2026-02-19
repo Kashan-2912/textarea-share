@@ -10,7 +10,7 @@ interface Props {
 }
 
 // Longhand border props to avoid React shorthand/longhand conflict warning
-const BTN_BASE = "cursor-pointer rounded-[5px] whitespace-nowrap leading-snug bg-transparent text-[#999] border border-[#2e2e2e] px-2 py-[3px] text-[11px] md:px-3 md:py-[5px] md:text-[13px]";
+const BTN_BASE = "target-button cursor-pointer rounded-[5px] whitespace-nowrap leading-snug bg-transparent text-[#999] border border-[#2e2e2e] px-2 py-[3px] text-[11px] md:px-3 md:py-[5px] md:text-[13px]";
 
 export function Toolbar({
   copied, copiedRO, readOnly,

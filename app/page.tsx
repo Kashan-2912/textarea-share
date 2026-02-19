@@ -175,6 +175,7 @@ export default function Home() {
   /* ---------- render ---------- */
   return (
     <main className="pt-[72px] md:pt-[96px] px-4 pb-16 max-w-[920px] mx-auto">
+      <TargetCursor targetSelector=".target-button" />
       <Toolbar
         copied={copied}
         copiedRO={copiedRO}

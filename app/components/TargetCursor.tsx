@@ -12,7 +12,7 @@ export interface TargetCursorProps {
 const TargetCursor: React.FC<TargetCursorProps> = ({
   targetSelector = '.cursor-target',
   spinDuration = 2,
-  hideDefaultCursor = true,
+  hideDefaultCursor = false,
   hoverDuration = 0.2,
   parallaxOn = true
 }) => {
@@ -68,7 +68,8 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
       xPercent: -50,
       yPercent: -50,
       x: window.innerWidth / 2,
-      y: window.innerHeight / 2
+      y: window.innerHeight / 2,
+      opacity: 0 // hidden by default since we show native cursor
     });
 
     const createSpinTimeline = () => {
@@ -187,6 +188,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
       gsap.ticker.add(tickerFnRef.current!);
 
       gsap.to(activeStrengthRef.current, { current: 1, duration: hoverDuration, ease: 'power2.out' });
+      gsap.to(cursorRef.current, { opacity: 1, duration: 0.2 }); // fade in
 
       corners.forEach((corner, i) => {
         gsap.to(corner, {
@@ -201,7 +203,9 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
         gsap.ticker.remove(tickerFnRef.current!);
         isActiveRef.current = false;
         targetCornerPositionsRef.current = null;
+        targetCornerPositionsRef.current = null;
         gsap.set(activeStrengthRef.current, { current: 0, overwrite: true });
+        if (cursorRef.current) gsap.to(cursorRef.current, { opacity: 0, duration: 0.2 }); // fade out
         activeTarget = null;
         if (cornersRef.current) {
           const corners = Array.from(cornersRef.current);
