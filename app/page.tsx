@@ -172,7 +172,7 @@ export default function Home() {
 
   /* ---------- render ---------- */
   return (
-    <main style={{ padding: "52px 16px 60px", maxWidth: 920, margin: "0 auto" }}>
+    <main className="pt-[72px] md:pt-[96px] px-4 pb-16 max-w-[920px] mx-auto">
       <Toolbar
         copied={copied}
         copiedRO={copiedRO}
@@ -198,7 +198,7 @@ export default function Home() {
               minHeight: 220,
               overflowY: "auto",
               padding: 16,
-              border: "1px solid #2a2a2a",
+              border: "1px solid #a8e524",
               borderRadius: 10,
               background: "#0a0a0a",
               color: "#ededed",

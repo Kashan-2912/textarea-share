@@ -14,3 +14,30 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Custom scrollbar ── */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #a8e524 transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #a8e524;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c4f53a;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
