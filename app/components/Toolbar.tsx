@@ -23,7 +23,7 @@ export function Toolbar({
     >
       {/* Left: brand + badge */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[#444] font-bold tracking-widest text-[11px] md:text-[13px]">
+        <span className="text-[#a8e524] font-bold tracking-widest text-[11px] md:text-[13px]">
           SHARE·PAD
         </span>
         {readOnly && (

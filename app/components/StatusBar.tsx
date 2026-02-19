@@ -35,7 +35,7 @@ export function StatusBar({ value, urlLen, readOnly }: Props) {
         }}
         className="md:max-w-full max-w-50 md:text-sm text-[9px]"
         >
-          - Select text &amp; <strong style={{ color: "#4a4a4a" }}>right-click</strong> to format. <br />- Share 🔒 to share read-only version.
+          - Select text &amp; <strong style={{ color: "#a8e524" }}>right-click</strong> to format. <br />- <strong style={{ color: "#a8e524" }}>Share 🔒</strong> to share read-only version.
         </div>
       )}
 
