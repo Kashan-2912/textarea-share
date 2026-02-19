@@ -79,6 +79,8 @@ function deserializeFromUrl(hash: string): Descendant[] | null {
   return fromPlainText(raw);
 }
 
+const LS_KEY = "textarea-share-hash";
+
 export default function Home() {
   // Dropdown state
   const [dropdown, setDropdown] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
@@ -113,14 +115,17 @@ export default function Home() {
   /* -------------------- Load From URL -------------------- */
 
   useEffect(() => {
-    const hash = window.location.hash.slice(1);
+    // If URL has no hash, try restoring last session from localStorage
+    const urlHash = window.location.hash.slice(1);
+    const hash = urlHash || localStorage.getItem(LS_KEY) || "";
     if (hash) {
       try {
         const nodes = deserializeFromUrl(hash);
         if (nodes) {
-          // Set ref synchronously — Slate will read this on its first render.
           initialValueRef.current = nodes;
           setValue(nodes);
+          // Reflect restored hash in the URL too
+          if (!urlHash) window.history.replaceState(null, "", `#${hash}`);
         }
       } catch {
         // ignore bad hash
@@ -144,10 +149,13 @@ export default function Home() {
 
       if (isEmpty) {
         window.history.replaceState(null, "", window.location.pathname);
+        try { localStorage.removeItem(LS_KEY); } catch {}
         return;
       }
       const compressed = serializeToUrl(value);
       window.history.replaceState(null, "", `#${compressed}`);
+      // Persist hash for session restore
+      try { localStorage.setItem(LS_KEY, compressed); } catch {}
     } catch {
       // never break UI
     }
@@ -177,8 +185,7 @@ export default function Home() {
   }, [editor, color]);
 
   return (
-    <main style={{ padding: 40, maxWidth: 900, margin: "0 auto" }}>
-      {/* <h1>Live URL Compressor</h1> */}
+    <main style={{ padding: 40, maxWidth: 900, margin: "0 auto", position: "relative" }}>
 
       {/* Formatting dropdown will be shown on right-click selection */}
 
