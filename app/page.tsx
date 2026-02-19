@@ -13,6 +13,8 @@ import { ColorModal } from "./components/ColorModal";
 import { Toolbar } from "./components/Toolbar";
 import { StatusBar } from "./components/StatusBar";
 import { EditorLeaf } from "./components/EditorLeaf";
+import TargetCursor from "./components/TargetCursor";
+import ElectricBorder from "./components/ElectricBorder";
 
 /* -------------------- Constants -------------------- */
 
@@ -190,22 +192,30 @@ export default function Home() {
           initialValue={initialValueRef.current}
           onChange={(newValue) => { if (Array.isArray(newValue)) setValue(newValue); }}
         >
-          <Editable
-            readOnly={readOnly}
-            renderLeaf={renderLeaf}
-            style={{
-              maxHeight: "80vh",
-              minHeight: 220,
-              overflowY: "auto",
-              padding: 16,
-              border: "1px solid #4a90e2",
-              borderRadius: 10,
-              background: "#0a0a0a",
-              color: "#ededed",
-              lineHeight: 1.75,
-              fontSize: 15,
-              outline: "none",
-            }}
+          <ElectricBorder
+            color="#4a90e2"
+            speed={0.8}
+            chaos={0.08}
+            borderRadius={10}
+            className=""
+            style={{ display: "block" }}
+          >
+            <Editable
+              readOnly={readOnly}
+              renderLeaf={renderLeaf}
+              style={{
+                maxHeight: "80vh",
+                minHeight: 220,
+                overflowY: "auto",
+                padding: 16,
+                border: "none",
+                borderRadius: 10,
+                background: "#0a0a0a",
+                color: "#ededed",
+                lineHeight: 1.75,
+                fontSize: 15,
+                outline: "none",
+              }}
             spellCheck
             autoFocus={!readOnly}
             onContextMenu={(e) => {
@@ -218,6 +228,7 @@ export default function Home() {
               }
             }}
           />
+          </ElectricBorder>
 
           {/* Right-click formatting dropdown */}
           {!readOnly && dropdown.visible && (

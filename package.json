@@ -9,15 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "gsap": "^3.14.2",
+    "lucide-react": "^0.575.0",
     "lz-string": "^1.5.0",
     "next": "16.1.6",
+    "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
     "slate": "^0.123.0",
     "slate-history": "^0.113.1",
-    "slate-react": "^0.123.0"
+    "slate-react": "^0.123.0",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -27,6 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "shadcn": "^3.8.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
