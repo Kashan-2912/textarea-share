@@ -184,6 +184,14 @@ export default function Home() {
     );
   }, [editor, color]);
 
+  const resetFormat = useCallback(() => {
+    Transforms.setNodes(
+      editor,
+      { bold: undefined, italic: undefined, underline: undefined, color: undefined } as any,
+      { match: (n) => Text.isText(n), split: true },
+    );
+  }, [editor]);
+
   return (
     <main style={{ padding: 40, maxWidth: 900, margin: "0 auto", position: "relative" }}>
 
@@ -273,6 +281,18 @@ export default function Home() {
               >
                 <span style={{ display: "inline-block", width: 16, height: 16, borderRadius: 3, background: color, border: "1px solid #666" }} />
                 Color
+              </button>
+              {/* Divider */}
+              <div style={{ height: 1, background: "#3a3a3a", margin: "2px 0" }} />
+              {/* Reset formatting */}
+              <button
+                style={{ background: "none", color: "#f87171", border: "none", padding: 4, textAlign: "left", cursor: "pointer" }}
+                onClick={() => {
+                  resetFormat();
+                  setDropdown((d) => ({ ...d, visible: false }));
+                }}
+              >
+                Reset formatting
               </button>
             </div>
           )}
