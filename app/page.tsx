@@ -80,6 +80,16 @@ function deserializeFromUrl(hash: string): Descendant[] | null {
 }
 
 export default function Home() {
+    // Dropdown state
+    const [dropdown, setDropdown] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+    const [selection, setSelection] = useState<any>(null);
+
+    // Hide dropdown on click elsewhere
+    useEffect(() => {
+      const hide = () => setDropdown((d) => ({ ...d, visible: false }));
+      window.addEventListener("mousedown", hide);
+      return () => window.removeEventListener("mousedown", hide);
+    }, []);
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   // initialValueRef is set once in the effect before Slate mounts.
@@ -158,50 +168,20 @@ export default function Home() {
 
   return (
     <main style={{ padding: 40, maxWidth: 900, margin: "0 auto" }}>
-      <h1>Live URL Compressor</h1>
+      {/* <h1>Live URL Compressor</h1> */}
 
-      {/* Toolbar */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-        <Btn
-          onClick={() => toggleFormat("bold")}
-          style={{ fontWeight: "bold" }}
+      {/* Formatting dropdown will be shown on right-click selection */}
+
+      {mounted && (
+        <Slate
+          editor={editor}
+          initialValue={initialValueRef.current}
+          onChange={(newValue) => {
+            if (Array.isArray(newValue)) {
+              setValue(newValue);
+            }
+          }}
         >
-          B
-        </Btn>
-        <Btn
-          onClick={() => toggleFormat("italic")}
-          style={{ fontStyle: "italic" }}
-        >
-          I
-        </Btn>
-        <Btn
-          onClick={() => toggleFormat("underline")}
-          style={{ textDecoration: "underline" }}
-        >
-          U
-        </Btn>
-
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-        />
-
-        <Btn onClick={applyColor} style={{ background: color, color: "#fff" }}>
-          A
-        </Btn>
-      </div>
-
-        {mounted && (
-          <Slate
-            editor={editor}
-            initialValue={initialValueRef.current}
-            onChange={(newValue) => {
-              if (Array.isArray(newValue)) {
-                setValue(newValue);
-              }
-            }}
-          >
           <Editable
             renderLeaf={(props) => <Leaf {...props} />}
             style={{
@@ -209,12 +189,80 @@ export default function Home() {
               padding: 12,
               border: "1px solid #ccc",
               borderRadius: 8,
+              background: "#0a0a0a",
+              color: "#ededed",
             }}
             spellCheck
             autoFocus
+            onContextMenu={(e) => {
+              const sel = window.getSelection();
+              if (sel && sel.toString().length > 0) {
+                e.preventDefault();
+                setDropdown({ x: e.clientX, y: e.clientY, visible: true });
+                setSelection(editor.selection);
+              }
+            }}
           />
+          {/* Dropdown menu */}
+          {dropdown.visible && (
+            <div
+              style={{
+                position: "fixed",
+                left: dropdown.x,
+                top: dropdown.y,
+                background: "#222",
+                color: "#fff",
+                border: "1px solid #444",
+                borderRadius: 6,
+                zIndex: 1000,
+                minWidth: 120,
+                boxShadow: "0 2px 8px #0006",
+                padding: 8,
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <button style={{ background: "none", color: "#fff", border: "none", padding: 4, textAlign: "left", cursor: "pointer" }}
+                onClick={() => {
+                  toggleFormat("bold");
+                  setDropdown((d) => ({ ...d, visible: false }));
+                }}>
+                Bold
+              </button>
+              <button style={{ background: "none", color: "#fff", border: "none", padding: 4, textAlign: "left", cursor: "pointer" }}
+                onClick={() => {
+                  toggleFormat("italic");
+                  setDropdown((d) => ({ ...d, visible: false }));
+                }}>
+                Italic
+              </button>
+              <button style={{ background: "none", color: "#fff", border: "none", padding: 4, textAlign: "left", cursor: "pointer" }}
+                onClick={() => {
+                  toggleFormat("underline");
+                  setDropdown((d) => ({ ...d, visible: false }));
+                }}>
+                Underline
+              </button>
+              <button style={{ background: "none", color: "#fff", border: "none", padding: 4, textAlign: "left", cursor: "pointer" }}
+                onClick={() => {
+                  const color = prompt("Enter hex color (e.g. #ff0000):", "#ededed");
+                  if (color) {
+                    Transforms.setNodes(
+                      editor,
+                      { color },
+                      { match: (n) => Text.isText(n), split: true },
+                    );
+                  }
+                  setDropdown((d) => ({ ...d, visible: false }));
+                }}>
+                Text Color
+              </button>
+            </div>
+          )}
         </Slate>
-        )}
+      )}
     </main>
   );
 }
