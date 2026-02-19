@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Share Pad
 
-## Getting Started
+![Share Pad Preview](public/logo.svg)
 
-First, run the development server:
+> A modern, ephemeral, and URL-based collaborative notepad. No database, no login, just pure state sharing via compressed URLs.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Persist via URL**: All content is compressed using LZ-String and stored directly in the URL hash. Share the link, share the note.
+- **Read-Only Mode**: Generate secure, non-editable links for sharing content without risk of modification.
+- **Rich Text Editing**: Powered by [Slate.js](https://docs.slatejs.org/), supporting bold, italic, code blocks, and more.
+- **Export Options**: Download your notes instantly as `.txt`, `.md`, or `.html`.
+- **Premium UI**:
+  - **Electric Border**: Dynamic, animated glow effects powered by HTML5 Canvas.
+  - **Custom Cursor**: Interactive cursor with magnetic snap-to-target animations (GSAP).
+  - **Liquid Metal Logo**: A unique metallic fluid simulation for the brand mark.
+  - **Dark Mode First**: A sleek, high-contrast dark theme with `#a8e524` lime accents.
+- **Fully Responsive**: Optimized for mobile and desktop, with a dedicated mobile sharing sheet.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠 Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **Animation**: [GSAP 3](https://greensock.com/gsap/) (Cursor & Effects)
+- **Editor**: [Slate.js](https://docs.slatejs.org/)
+- **Compression**: [lz-string](https://github.com/pieroxy/lz-string)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-## Learn More
+## 🚀 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/yourusername/share-pad.git
+    cd share-pad
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3.  **Run the development server**:
+    ```bash
+    npm run dev
+    ```
 
-## Deploy on Vercel
+4.  Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🎨 Design Philosophy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Share Pad is built with a focus on **visual impact** and **simplicity**.
+- **The "Electric" aesthetic**: High-voltage borders and neon accents give life to the static text editor.
+- **Micro-interactions**: Every hover, click, and movement is rewarded with subtle animations.
+- **No Friction**: Open the app, type, copy the URL. No sign-up walls.
+
+## 📄 License
+
+MIT © 2024 Share Pad
