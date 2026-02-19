@@ -7,7 +7,7 @@ import { withHistory } from "slate-history";
 
 import { withMarkdownShortcuts } from "./lib/markdown-shortcuts";
 import { serializeToUrl, deserializeFromUrl, toPlainText } from "./lib/compression";
-import { toMarkdown, downloadFile } from "./lib/export";
+import { toMarkdown, toHtml, downloadFile } from "./lib/export";
 import { FormattingDropdown } from "./components/FormattingDropdown";
 import { ColorModal } from "./components/ColorModal";
 import { Toolbar } from "./components/Toolbar";
@@ -46,11 +46,14 @@ export default function Home() {
   const [colorModalOpen, setColorModalOpen] = useState(false);
   const [pendingColor, setPendingColor] = useState("#000000");
   const [copied, setCopied]             = useState(false);
+  const [copiedRO, setCopiedRO]         = useState(false);
   const [urlLen, setUrlLen]             = useState(0);
   const [dropdown, setDropdown]         = useState<{ x: number; y: number; visible: boolean }>(
     { x: 0, y: 0, visible: false }
   );
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef          = useRef<HTMLDivElement | null>(null);
+  // Saved Slate selection when context menu opens — restored before every transform
+  const savedSelectionRef     = useRef<any>(null);
 
   /* ---------- close dropdown on outside click ---------- */
   useEffect(() => {
@@ -110,9 +113,17 @@ export default function Home() {
     } catch { /* never break UI */ }
   }, [value, mounted]);
 
+  /* ---------- restore saved selection before transforms ---------- */
+  const restoreSelection = useCallback(() => {
+    if (savedSelectionRef.current) {
+      Transforms.select(editor, savedSelectionRef.current);
+    }
+  }, [editor]);
+
   /* ---------- formatting callbacks ---------- */
   const toggleFormat = useCallback(
     (format: string) => {
+      restoreSelection();
       const isActive = isFormatActive(editor, format);
       Transforms.setNodes(
         editor,
@@ -120,30 +131,41 @@ export default function Home() {
         { match: (n: any) => Text.isText(n), split: true }
       );
     },
-    [editor]
+    [editor, restoreSelection]
   );
 
   const resetFormat = useCallback(() => {
+    restoreSelection();
     Transforms.setNodes(
       editor,
       { bold: undefined, italic: undefined, underline: undefined, color: undefined } as any,
       { match: (n: any) => Text.isText(n), split: true }
     );
-  }, [editor]);
+  }, [editor, restoreSelection]);
 
   const setHeading = useCallback(
     (type: string) => {
+      restoreSelection();
       Transforms.setNodes(editor, { type } as any, {
-        match: (n: any) => Editor.isBlock(editor, n),
+        match: (n: any) => !Editor.isEditor(n) && Editor.isBlock(editor, n),
       });
     },
-    [editor]
+    [editor, restoreSelection]
   );
 
   const copyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  }, []);
+
+  const copyReadOnly = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "1");
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      setCopiedRO(true);
+      setTimeout(() => setCopiedRO(false), 2500);
     });
   }, []);
 
@@ -161,10 +183,13 @@ export default function Home() {
     <main style={{ padding: "80px 40px 60px", maxWidth: 920, margin: "0 auto" }}>
       <Toolbar
         copied={copied}
+        copiedRO={copiedRO}
         readOnly={readOnly}
         onCopy={copyLink}
-        onExportTxt={() => downloadFile(toPlainText(value), "share.txt", "text/plain")}
-        onExportMd={()  => downloadFile(toMarkdown(value),  "share.md",  "text/markdown")}
+        onCopyReadOnly={copyReadOnly}
+        onExportTxt={()  => downloadFile(toPlainText(value), "share.txt",  "text/plain")}
+        onExportMd={()   => downloadFile(toMarkdown(value),  "share.md",   "text/markdown")}
+        onExportHtml={() => downloadFile(toHtml(value),      "share.html", "text/html")}
       />
 
       {mounted && (
@@ -197,6 +222,7 @@ export default function Home() {
               const sel = window.getSelection();
               if (sel && sel.toString().length > 0) {
                 e.preventDefault();
+                savedSelectionRef.current = editor.selection; // save before blur
                 setDropdown({ x: e.clientX, y: e.clientY, visible: true });
               }
             }}
