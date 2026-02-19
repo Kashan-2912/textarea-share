@@ -1,46 +1,35 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { createEditor, Transforms, Text, Descendant, Range as SlateRange } from "slate";
-import { Slate, Editable, withReact, ReactEditor } from "slate-react";
-import { withHistory } from "slate-history";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Color from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Placeholder from "@tiptap/extension-placeholder";
 
-import { withMarkdownShortcuts } from "./lib/markdown-shortcuts";
-import { serializeToUrl, deserializeFromUrl, toPlainText } from "./lib/compression";
-import { toMarkdown, toHtml, downloadFile } from "./lib/export";
-import { FormattingDropdown } from "./components/FormattingDropdown";
+import Strike from "@tiptap/extension-strike";
+
+import Highlight from "@tiptap/extension-highlight";
+import { CharacterCount } from "@tiptap/extension-character-count";
+
+import { serializeToUrl, deserializeFromUrl } from "./lib/compression";
+import { toMarkdown, toHtml, downloadFile, toPlainText } from "./lib/export";
 import { ColorModal } from "./components/ColorModal";
 import { Toolbar } from "./components/Toolbar";
 import { StatusBar } from "./components/StatusBar";
-import { EditorLeaf } from "./components/EditorLeaf";
+import { EditorToolbar } from "./components/EditorToolbar";
 import TargetCursor from "./components/TargetCursor";
 import ElectricBorder from "./components/ElectricBorder";
+import { convertSlateToTiptap } from "./lib/tiptap-migration";
 
 /* -------------------- Constants -------------------- */
 
 const LS_KEY = "textarea-share-hash";
 
-const EMPTY_VALUE: Descendant[] = [
-  { type: "paragraph", children: [{ text: "" }] } as any,
-];
-
-function isFormatActive(editor: any, format: string) {
-  const [match] = Array.from(
-    editor.nodes({ match: (n: any) => n[format] === true, universal: true })
-  );
-  return !!match;
-}
-
 /* -------------------- Page -------------------- */
 
 export default function Home() {
-  const editor = useMemo(
-    () => withMarkdownShortcuts(withHistory(withReact(createEditor()))),
-    []
-  );
-
-  const initialValueRef = useRef<Descendant[]>(EMPTY_VALUE);
-  const [value, setValue]               = useState<Descendant[]>(EMPTY_VALUE);
   const [mounted, setMounted]           = useState(false);
   const [readOnly, setReadOnly]         = useState(false);
   const [color, setColor]               = useState("#000000");
@@ -53,10 +42,62 @@ export default function Home() {
     { x: 0, y: 0, visible: false }
   );
   const dropdownRef          = useRef<HTMLDivElement | null>(null);
-  // Saved Slate selection when context menu opens — restored before every transform
-  const savedSelectionRef     = useRef<any>(null);
   const [isDesktop, setIsDesktop] = useState(true);
   const [isSelectingMobile, setIsSelectingMobile] = useState(false);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Strike,
+      Highlight,
+      TextStyle,
+      Color,
+      Placeholder.configure({
+        placeholder: "Start typing something beautiful...",
+      }),
+      CharacterCount,
+    ],
+    content: "",
+    editable: !readOnly,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      if (!mounted) return;
+      const json = editor.getJSON();
+      const isEmpty = editor.isEmpty;
+
+      if (isEmpty) {
+        window.history.replaceState(null, "", window.location.pathname);
+        try { localStorage.removeItem(LS_KEY); } catch {}
+        setUrlLen(0);
+        return;
+      }
+
+      const compressed = serializeToUrl(json as any);
+      window.history.replaceState(null, "", `#${compressed}`);
+      try { localStorage.setItem(LS_KEY, compressed); } catch {}
+      setUrlLen(window.location.href.length);
+    },
+    onSelectionUpdate: ({ editor }) => {
+      if (!isDesktop && isSelectingMobile && !editor.state.selection.empty) {
+        try {
+          const { from, to } = editor.state.selection;
+          const start = editor.view.coordsAtPos(from);
+          const end = editor.view.coordsAtPos(to);
+          
+          // Position the menu above the selection
+          setDropdown({
+            x: (start.left + end.left) / 2 - 75,
+            y: Math.min(start.top, end.top) - 60,
+            visible: true
+          });
+          setIsSelectingMobile(false);
+        } catch (err) {
+          console.error("Failed to position mobile menu", err);
+        }
+      }
+    }
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -80,104 +121,57 @@ export default function Home() {
 
   /* ---------- mount: load from URL hash / localStorage ---------- */
   useEffect(() => {
+    if (!editor) return;
+
     // Read-only mode: ?view=1
     const params = new URLSearchParams(window.location.search);
-    if (params.get("view") === "1") setReadOnly(true);
+    const isRO = params.get("view") === "1";
+    if (isRO) {
+      setReadOnly(true);
+      editor.setEditable(false);
+    }
 
     const urlHash = window.location.hash.slice(1);
     const hash    = urlHash || localStorage.getItem(LS_KEY) || "";
+
     if (hash) {
       try {
-        const nodes = deserializeFromUrl(hash);
-        if (nodes) {
-          initialValueRef.current = nodes;
-          setValue(nodes);
+        const data = deserializeFromUrl(hash);
+        if (data) {
+          // Backward compatibility: If it's Slate data (array), convert it
+          let finalContent = data;
+          if (Array.isArray(data)) {
+            finalContent = convertSlateToTiptap(data);
+          }
+          editor.commands.setContent(finalContent);
+          
           if (!urlHash) window.history.replaceState(null, "", `#${hash}`);
         }
-      } catch { /* corrupt hash — ignore */ }
+      } catch (err) {
+        console.error("Migration/Load error:", err);
+      }
     }
     setMounted(true);
-  }, []);
-
-  /* ---------- save to URL + localStorage on every change ---------- */
-  useEffect(() => {
-    if (!mounted) return;
-
-    // Mobile Auto-Menu Trigger:
-    // If a user clicked "Select" and now has a range selected...
-    if (!isDesktop && isSelectingMobile && editor.selection && !SlateRange.isCollapsed(editor.selection)) {
-      try {
-        const domRange = ReactEditor.toDOMRange(editor, editor.selection);
-        const rect = domRange.getBoundingClientRect();
-        
-        // Scroll adjustment: use viewport-relative coords (fixed menu)
-        savedSelectionRef.current = editor.selection;
-        setDropdown({
-          x: rect.left + rect.width / 2 - 75, // center it horizontally
-          y: rect.top - 60, // position above the selection
-          visible: true
-        });
-        setIsSelectingMobile(false);
-      } catch (err) {
-        console.error("Failed to position mobile menu", err);
-      }
-    }
-
-    try {
-      const isEmpty =
-        !Array.isArray(value) ||
-        value.length === 0 ||
-        (value.length === 1 &&
-          (value[0] as any).type === "paragraph" &&
-          (value[0] as any).children?.length === 1 &&
-          (value[0] as any).children[0].text === "");
-
-      if (isEmpty) {
-        window.history.replaceState(null, "", window.location.pathname);
-        try { localStorage.removeItem(LS_KEY); } catch {}
-        setUrlLen(0);
-        return;
-      }
-
-      const compressed = serializeToUrl(value);
-      window.history.replaceState(null, "", `#${compressed}`);
-      try { localStorage.setItem(LS_KEY, compressed); } catch {}
-      setUrlLen(window.location.href.length);
-    } catch { /* never break UI */ }
-  }, [value, mounted]);
-
-  /* ---------- restore saved selection before transforms ---------- */
-  const restoreSelection = useCallback(() => {
-    // Re-focus the editor first — without this, Slate won't re-render DOM
-    // changes (headings etc.) because it's in a blurred state.
-    try { ReactEditor.focus(editor); } catch {}
-    if (savedSelectionRef.current) {
-      Transforms.select(editor, savedSelectionRef.current);
-    }
   }, [editor]);
 
   /* ---------- formatting callbacks ---------- */
   const toggleFormat = useCallback(
     (format: string) => {
-      restoreSelection();
-      const isActive = isFormatActive(editor, format);
-      Transforms.setNodes(
-        editor,
-        { [format]: isActive ? undefined : true } as any,
-        { match: (n: any) => Text.isText(n), split: true }
-      );
+      if (!editor) return;
+      if (format === "bold") editor.chain().focus().toggleBold().run();
+      else if (format === "italic") editor.chain().focus().toggleItalic().run();
+      else if (format === "underline") editor.chain().focus().toggleUnderline().run();
+      else if (format === "h1") editor.chain().focus().toggleHeading({ level: 1 }).run();
+      else if (format === "h2") editor.chain().focus().toggleHeading({ level: 2 }).run();
+      else if (format === "h3") editor.chain().focus().toggleHeading({ level: 3 }).run();
     },
-    [editor, restoreSelection]
+    [editor]
   );
 
   const resetFormat = useCallback(() => {
-    restoreSelection();
-    Transforms.setNodes(
-      editor,
-      { bold: undefined, italic: undefined, underline: undefined, color: undefined } as any,
-      { match: (n: any) => Text.isText(n), split: true }
-    );
-  }, [editor, restoreSelection]);
+    if (!editor) return;
+    editor.chain().focus().unsetAllMarks().run();
+  }, [editor]);
 
 
   const copyLink = useCallback(() => {
@@ -201,9 +195,6 @@ export default function Home() {
     []
   );
 
-  /* ---------- renderers (stable refs) ---------- */
-  const renderLeaf = useCallback((props: any) => <EditorLeaf {...props} />, []);
-
   /* ---------- render ---------- */
   return (
     <main className="pt-[72px] md:pt-[96px] px-4 pb-4 md:pb-16 max-w-[920px] mx-auto min-h-screen flex flex-col">
@@ -214,17 +205,13 @@ export default function Home() {
         readOnly={readOnly}
         onCopy={copyLink}
         onCopyReadOnly={copyReadOnly}
-        onExportTxt={()  => downloadFile(toPlainText(value), "share.txt",  "text/plain")}
-        onExportMd={()   => downloadFile(toMarkdown(value),  "share.md",   "text/markdown")}
-        onExportHtml={() => downloadFile(toHtml(value),      "share.html", "text/html")}
+        onExportTxt={()  => editor && downloadFile(toPlainText(editor.getJSON()), "share.txt",  "text/plain")}
+        onExportMd={()   => editor && downloadFile(toMarkdown(editor.getJSON()),  "share.md",   "text/markdown")}
+        onExportHtml={() => editor && downloadFile(toHtml(editor.getJSON()),      "share.html", "text/html")}
       />
 
-      {mounted && (
-        <Slate
-          editor={editor}
-          initialValue={initialValueRef.current}
-          onChange={(newValue) => { if (Array.isArray(newValue)) setValue(newValue); }}
-        >
+      {mounted && editor && (
+        <div className="relative">
           <ElectricBorder
             color="#a8e524"
             speed={0.2}
@@ -234,69 +221,66 @@ export default function Home() {
             className="border border-[#2e2e2e] rounded-[10px] bg-[#0a0a0a] lg:border-none lg:bg-transparent"
             style={{ display: "block" }}
           >
-            <Editable
-              className="min-h-[calc(100vh-160px)] lg:min-h-[220px]"
-              readOnly={readOnly}
-              renderLeaf={renderLeaf}
-              style={{
-                maxHeight: "80vh",
-                overflowY: "auto",
-                padding: 16,
-                border: "none",
-                borderRadius: 10,
-                background: "#0a0a0a",
-                color: "#ededed",
-                lineHeight: 1.75,
-                fontSize: 15,
-                outline: "none",
-              }}
-              spellCheck
-              autoFocus={!readOnly}
+            <style>{`
+              .ProseMirror {
+                outline: none !important;
+                padding: 24px !important;
+                max-height: 70vh !important;
+                overflow-y: auto !important;
+                -webkit-touch-callout: none !important;
+                -webkit-tap-highlight-color: transparent !important;
+              }
+              /* Ensure the placeholder also follows padding */
+              .ProseMirror p.is-editor-empty:first-child::before {
+                left: 24px !important;
+                top: 24px !important;
+              }
+            `}</style>
+
+            {!readOnly && (
+              <EditorToolbar 
+                editor={editor} 
+                currentColor={color}
+                onOpenColorModal={() => { setPendingColor(color); setColorModalOpen(true); }}
+              />
+            )}
+
+            <EditorContent 
+              editor={editor} 
+              className="touch-callout-none"
               onContextMenu={(e) => {
                 if (readOnly) return;
-                const sel = window.getSelection();
-                if (sel && sel.toString().length > 0) {
+                const { from, to } = editor.state.selection;
+                if (from !== to) {
                   e.preventDefault();
-                  savedSelectionRef.current = editor.selection; // save before blur
                   setDropdown({ x: e.clientX, y: e.clientY, visible: true });
                 }
               }}
             />
           </ElectricBorder>
 
-          {/* Right-click formatting dropdown */}
-          {!readOnly && dropdown.visible && (
-            <FormattingDropdown
-              ref={dropdownRef}
-              x={dropdown.x}
-              y={dropdown.y}
-              color={color}
-              onToggleFormat={(f) => { toggleFormat(f); closeDropdown(); }}
-              onOpenColorModal={() => { setPendingColor(color); setColorModalOpen(true); }}
-              onResetFormat={() => { resetFormat(); closeDropdown(); }}
-            />
-          )}
-
           {/* Color picker modal */}
-            <ColorModal
-              open={colorModalOpen}
-              pendingColor={pendingColor}
-              onPendingColorChange={setPendingColor}
-              onApply={() => {
-                setColor(pendingColor);
-                Transforms.setNodes(editor, { color: pendingColor } as any, {
-                  match: (n: any) => Text.isText(n),
-                  split: true,
-                });
-                setColorModalOpen(false);
-                closeDropdown();
-              }}
-              onCancel={() => setColorModalOpen(false)}
-            />
-          </Slate>
+          <ColorModal
+            open={colorModalOpen}
+            pendingColor={pendingColor}
+            onPendingColorChange={setPendingColor}
+            onApply={() => {
+              const hex = pendingColor;
+              setColor(hex);
+              editor.chain().focus().setColor(hex).run();
+              setColorModalOpen(false);
+              closeDropdown();
+            }}
+            onCancel={() => setColorModalOpen(false)}
+          />
+        </div>
       )}
 
-      <StatusBar value={value} urlLen={urlLen} readOnly={readOnly} />
+      <StatusBar 
+        editor={editor} 
+        urlLen={urlLen} 
+        readOnly={readOnly} 
+      />
     </main>
   );
 }

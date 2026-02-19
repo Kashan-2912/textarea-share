@@ -1,16 +1,14 @@
-import { Descendant } from "slate";
-import { toPlainText } from "../lib/compression";
+
 
 interface Props {
-  value: Descendant[];
+  editor: any;
   urlLen: number;
   readOnly: boolean;
 }
 
-export function StatusBar({ value, urlLen, readOnly }: Props) {
-  const text      = toPlainText(value);
-  const charCount = text.length;
-  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+export function StatusBar({ editor, urlLen, readOnly }: Props) {
+  const charCount = editor?.storage?.characterCount?.characters() ?? 0;
+  const wordCount = editor?.storage?.characterCount?.words() ?? 0;
 
   const urlSafe    = urlLen === 0 || urlLen < 1500;
   const urlWarn    = urlLen >= 1500 && urlLen < 2000;

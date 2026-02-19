@@ -1,6 +1,4 @@
-import { Descendant, Text } from "slate";
-
-/* ---------- leaf helpers ---------- */
+/* ---------- leaf helpers (legacy Slate) ---------- */
 
 function escapeHtml(t: string) {
   return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -26,19 +24,65 @@ function leafToHtml(leaf: any): string {
 
 function childrenToMd(children: any[]): string {
   return (children ?? [])
-    .map((c) => (Text.isText(c) ? leafToMd(c) : childrenToMd((c as any).children ?? [])))
+    .map((c) => (c.text !== undefined ? leafToMd(c) : childrenToMd((c as any).children ?? [])))
     .join("");
 }
 
 function childrenToHtml(children: any[]): string {
   return (children ?? [])
-    .map((c) => (Text.isText(c) ? leafToHtml(c) : childrenToHtml((c as any).children ?? [])))
+    .map((c) => (c.text !== undefined ? leafToHtml(c) : childrenToHtml((c as any).children ?? [])))
     .join("");
 }
 
 /* ---------- public exports ---------- */
 
-export function toMarkdown(nodes: Descendant[]): string {
+export function toPlainText(nodes: any): string {
+  if (nodes?.type === "doc") {
+    return (nodes.content ?? [])
+      .map((n: any) => {
+        return (n.content ?? []).map((c: any) => c.text ?? "").join("");
+      })
+      .join("\n");
+  }
+  if (Array.isArray(nodes)) {
+    return nodes
+      .map((n) =>
+        (n as any).text !== undefined
+          ? (n as any).text
+          : (n as any).children
+          ? toPlainText((n as any).children)
+          : ""
+      )
+      .join("\n");
+  }
+  return "";
+}
+
+export function toMarkdown(nodes: any): string {
+  if (nodes?.type === "doc") {
+    return (nodes.content ?? [])
+      .map((node: any) => {
+        const c = (node.content ?? [])
+          .map((c: any) => {
+            let t = c.text ?? "";
+            if (!t) return "";
+            if (c.marks?.some((m: any) => m.type === "bold")) t = `**${t}**`;
+            if (c.marks?.some((m: any) => m.type === "italic")) t = `_${t}_`;
+            if (c.marks?.some((m: any) => m.type === "underline")) t = `<u>${t}</u>`;
+            return t;
+          })
+          .join("");
+        
+        if (node.type === "heading") {
+          const l = node.attrs?.level || 1;
+          return `${"#".repeat(l)} ${c}`;
+        }
+        return c;
+      })
+      .join("\n");
+  }
+
+  if (!Array.isArray(nodes)) return "";
   return nodes
     .map((node) => {
       const n = node as any;
@@ -53,19 +97,45 @@ export function toMarkdown(nodes: Descendant[]): string {
     .join("\n");
 }
 
-export function toHtml(nodes: Descendant[]): string {
-  const body = nodes
-    .map((node) => {
-      const n = node as any;
-      const c = childrenToHtml(n.children ?? []);
-      switch (n.type) {
-        case "heading-one":   return `<h1>${c}</h1>`;
-        case "heading-two":   return `<h2>${c}</h2>`;
-        case "heading-three": return `<h3>${c}</h3>`;
-        default:              return `<p>${c}</p>`;
-      }
-    })
-    .join("\n");
+export function toHtml(nodes: any): string {
+  let body = "";
+
+  if (nodes?.type === "doc") {
+    body = (nodes.content ?? [])
+      .map((node: any) => {
+        const c = (node.content ?? [])
+          .map((c: any) => {
+            let t = escapeHtml(c.text ?? "");
+            if (c.marks?.some((m: any) => m.type === "bold")) t = `<strong>${t}</strong>`;
+            if (c.marks?.some((m: any) => m.type === "italic")) t = `<em>${t}</em>`;
+            if (c.marks?.some((m: any) => m.type === "underline")) t = `<u>${t}</u>`;
+            const colorMark = c.marks?.find((m: any) => m.type === "textStyle");
+            if (colorMark?.attrs?.color) t = `<span style="color:${colorMark.attrs.color}">${t}</span>`;
+            return t;
+          })
+          .join("");
+
+        if (node.type === "heading") {
+          const l = node.attrs?.level || 1;
+          return `<h${l}>${c}</h${l}>`;
+        }
+        return `<p>${c}</p>`;
+      })
+      .join("\n");
+  } else if (Array.isArray(nodes)) {
+    body = nodes
+      .map((node) => {
+        const n = node as any;
+        const c = childrenToHtml(n.children ?? []);
+        switch (n.type) {
+          case "heading-one":   return `<h1>${c}</h1>`;
+          case "heading-two":   return `<h2>${c}</h2>`;
+          case "heading-three": return `### ${c}`;
+          default:              return `<p>${c}</p>`;
+        }
+      })
+      .join("\n");
+  }
 
   return `<!DOCTYPE html>
 <html lang="en">

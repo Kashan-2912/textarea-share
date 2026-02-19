@@ -12,6 +12,7 @@ interface Props {
   onExportTxt: () => void;
   onExportMd: () => void;
   onExportHtml: () => void;
+  // onSelectMode?: () => void;
 }
 
 // Longhand border props to avoid React shorthand/longhand conflict warning
@@ -72,6 +73,16 @@ export function Toolbar({
             }`}
           >
             {copied ? "✓ Copied!" : "Copy link"}
+          </button>
+        </div>
+        
+        {/* Mobile: Action/Select Buttons */}
+        <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            className={`${BTN_BASE} !text-[#a8e524] !border-[#a8e524] font-semibold`}
+          >
+            Share / Export
           </button>
         </div>
       </div>
