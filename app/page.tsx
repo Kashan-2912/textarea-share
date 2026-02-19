@@ -194,8 +194,8 @@ export default function Home() {
           onChange={(newValue) => { if (Array.isArray(newValue)) setValue(newValue); }}
         >
           <ElectricBorder
-            color="#4a90e2"
-            speed={0.8}
+            color="#a8e524"
+            speed={0.2}
             chaos={0.08}
             borderRadius={10}
             className=""

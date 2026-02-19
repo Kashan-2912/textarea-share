@@ -1,4 +1,6 @@
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+"use client";
+
+import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { gsap } from 'gsap';
 
 export interface TargetCursorProps {
@@ -25,14 +27,24 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
   const targetCornerPositionsRef = useRef<{ x: number; y: number }[] | null>(null);
   const tickerFnRef = useRef<(() => void) | null>(null);
   const activeStrengthRef = useRef({ current: 0 });
+  
+  const [isMobile, setIsMobile] = useState(false);
 
-  const isMobile = useMemo(() => {
-    const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isSmallScreen = window.innerWidth <= 768;
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-    const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
-    return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
+  useEffect(() => {
+    // Client-side only check
+    const checkMobile = () => {
+      const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth <= 768;
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+      const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
+      return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
+    };
+    setIsMobile(checkMobile());
+    
+    // Optional: Update on resize if needed, but usually not required for simple mobile detection
+    // window.addEventListener('resize', () => setIsMobile(checkMobile()));
+    // return () => window.removeEventListener('resize', ...);
   }, []);
 
   const constants = useMemo(() => ({ borderWidth: 3, cornerSize: 12 }), []);

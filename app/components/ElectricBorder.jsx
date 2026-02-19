@@ -5,10 +5,10 @@ import './ElectricBorder.css';
 
 const ElectricBorder = ({
   children,
-  color = '#5227FF',
+  color = '#a8e524',
   speed = 1,
-  chaos = 0.12,
-  borderRadius = 24,
+  chaos = 0.02,
+  borderRadius = 0,
   className,
   style
 }) => {
