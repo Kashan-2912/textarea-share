@@ -174,7 +174,7 @@ export default function Home() {
 
   /* ---------- render ---------- */
   return (
-    <main className="pt-[72px] md:pt-[96px] px-4 pb-16 max-w-[920px] mx-auto">
+    <main className="pt-[72px] md:pt-[96px] px-4 pb-4 md:pb-16 max-w-[920px] mx-auto min-h-screen flex flex-col">
       <TargetCursor targetSelector=".target-button" />
       <Toolbar
         copied={copied}
@@ -193,43 +193,78 @@ export default function Home() {
           initialValue={initialValueRef.current}
           onChange={(newValue) => { if (Array.isArray(newValue)) setValue(newValue); }}
         >
-          <ElectricBorder
-            color="#a8e524"
-            speed={0.2}
-            chaos={0.08}
-            borderRadius={10}
-            className=""
-            style={{ display: "block" }}
-          >
+          {/* Desktop: Electric Border (only lg+) */}
+          <div className="hidden lg:block">
+            <ElectricBorder
+              color="#a8e524"
+              speed={0.2}
+              chaos={0.08}
+              borderRadius={10}
+              className=""
+              style={{ display: "block" }}
+            >
+              <Editable
+                readOnly={readOnly}
+                renderLeaf={renderLeaf}
+                style={{
+                  maxHeight: "80vh",
+                  minHeight: 220,
+                  overflowY: "auto",
+                  padding: 16,
+                  border: "none",
+                  borderRadius: 10,
+                  background: "#0a0a0a",
+                  color: "#ededed",
+                  lineHeight: 1.75,
+                  fontSize: 15,
+                  outline: "none",
+                }}
+                spellCheck
+                autoFocus={!readOnly}
+                onContextMenu={(e) => {
+                  if (readOnly) return;
+                  const sel = window.getSelection();
+                  if (sel && sel.toString().length > 0) {
+                    e.preventDefault();
+                    savedSelectionRef.current = editor.selection; // save before blur
+                    setDropdown({ x: e.clientX, y: e.clientY, visible: true });
+                  }
+                }}
+              />
+            </ElectricBorder>
+          </div>
+
+          {/* Mobile: Simple Border (lg:hidden) */}
+          <div className="block lg:hidden border border-[#2e2e2e] rounded-[10px] bg-[#0a0a0a]">
             <Editable
               readOnly={readOnly}
               renderLeaf={renderLeaf}
               style={{
                 maxHeight: "80vh",
-                minHeight: 220,
+                minHeight: "calc(100vh - 160px)", // Fill available space on mobile
                 overflowY: "auto",
                 padding: 16,
                 border: "none",
                 borderRadius: 10,
-                background: "#0a0a0a",
+                background: "transparent",
                 color: "#ededed",
                 lineHeight: 1.75,
                 fontSize: 15,
                 outline: "none",
               }}
-            spellCheck
-            autoFocus={!readOnly}
-            onContextMenu={(e) => {
-              if (readOnly) return;
-              const sel = window.getSelection();
-              if (sel && sel.toString().length > 0) {
-                e.preventDefault();
-                savedSelectionRef.current = editor.selection; // save before blur
-                setDropdown({ x: e.clientX, y: e.clientY, visible: true });
-              }
-            }}
-          />
-          </ElectricBorder>
+              spellCheck
+              autoFocus={!readOnly}
+              onContextMenu={(e) => {
+                if (readOnly) return;
+                const sel = window.getSelection();
+                if (sel && sel.toString().length > 0) {
+                  e.preventDefault();
+                  savedSelectionRef.current = editor.selection; // save before blur
+                  setDropdown({ x: e.clientX, y: e.clientY, visible: true });
+                }
+              }}
+            />
+          </div>
 
           {/* Right-click formatting dropdown */}
           {!readOnly && dropdown.visible && (
