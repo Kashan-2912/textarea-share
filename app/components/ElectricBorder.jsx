@@ -9,6 +9,7 @@ const ElectricBorder = ({
   speed = 1,
   chaos = 0.02,
   borderRadius = 0,
+  disabled = false,
   className,
   style
 }) => {
@@ -273,6 +274,14 @@ const ElectricBorder = ({
     '--electric-border-color': color,
     borderRadius: borderRadius
   };
+
+  if (disabled) {
+    return (
+      <div className={className} style={{ borderRadius, ...style }}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className={`electric-border ${className ?? ''}`} style={{ ...vars, ...style }}>

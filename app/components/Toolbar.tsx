@@ -74,14 +74,6 @@ export function Toolbar({
             {copied ? "✓ Copied!" : "Copy link"}
           </button>
         </div>
-
-        {/* Mobile: Single Share Button */}
-        <button
-          onClick={() => setShowMobileMenu(true)}
-          className={`md:hidden ${BTN_BASE} !text-[#a8e524] !border-[#a8e524] font-semibold`}
-        >
-          Share / Export
-        </button>
       </div>
 
       {/* Mobile Modal */}

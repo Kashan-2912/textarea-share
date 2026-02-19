@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { createEditor, Transforms, Text, Descendant } from "slate";
+import { createEditor, Transforms, Text, Descendant, Range as SlateRange } from "slate";
 import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import { withHistory } from "slate-history";
 
@@ -55,6 +55,17 @@ export default function Home() {
   const dropdownRef          = useRef<HTMLDivElement | null>(null);
   // Saved Slate selection when context menu opens — restored before every transform
   const savedSelectionRef     = useRef<any>(null);
+  const [isDesktop, setIsDesktop] = useState(true);
+  const [isSelectingMobile, setIsSelectingMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(min-width: 1024px)");
+    setIsDesktop(media.matches);
+    const listener = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, []);
 
   /* ---------- close dropdown on outside click ---------- */
   useEffect(() => {
@@ -91,6 +102,27 @@ export default function Home() {
   /* ---------- save to URL + localStorage on every change ---------- */
   useEffect(() => {
     if (!mounted) return;
+
+    // Mobile Auto-Menu Trigger:
+    // If a user clicked "Select" and now has a range selected...
+    if (!isDesktop && isSelectingMobile && editor.selection && !SlateRange.isCollapsed(editor.selection)) {
+      try {
+        const domRange = ReactEditor.toDOMRange(editor, editor.selection);
+        const rect = domRange.getBoundingClientRect();
+        
+        // Scroll adjustment: use viewport-relative coords (fixed menu)
+        savedSelectionRef.current = editor.selection;
+        setDropdown({
+          x: rect.left + rect.width / 2 - 75, // center it horizontally
+          y: rect.top - 60, // position above the selection
+          visible: true
+        });
+        setIsSelectingMobile(false);
+      } catch (err) {
+        console.error("Failed to position mobile menu", err);
+      }
+    }
+
     try {
       const isEmpty =
         !Array.isArray(value) ||
@@ -193,60 +225,26 @@ export default function Home() {
           initialValue={initialValueRef.current}
           onChange={(newValue) => { if (Array.isArray(newValue)) setValue(newValue); }}
         >
-          {/* Desktop: Electric Border (only lg+) */}
-          <div className="hidden lg:block">
-            <ElectricBorder
-              color="#a8e524"
-              speed={0.2}
-              chaos={0.08}
-              borderRadius={10}
-              className=""
-              style={{ display: "block" }}
-            >
-              <Editable
-                readOnly={readOnly}
-                renderLeaf={renderLeaf}
-                style={{
-                  maxHeight: "80vh",
-                  minHeight: 220,
-                  overflowY: "auto",
-                  padding: 16,
-                  border: "none",
-                  borderRadius: 10,
-                  background: "#0a0a0a",
-                  color: "#ededed",
-                  lineHeight: 1.75,
-                  fontSize: 15,
-                  outline: "none",
-                }}
-                spellCheck
-                autoFocus={!readOnly}
-                onContextMenu={(e) => {
-                  if (readOnly) return;
-                  const sel = window.getSelection();
-                  if (sel && sel.toString().length > 0) {
-                    e.preventDefault();
-                    savedSelectionRef.current = editor.selection; // save before blur
-                    setDropdown({ x: e.clientX, y: e.clientY, visible: true });
-                  }
-                }}
-              />
-            </ElectricBorder>
-          </div>
-
-          {/* Mobile: Simple Border (lg:hidden) */}
-          <div className="block lg:hidden border border-[#2e2e2e] rounded-[10px] bg-[#0a0a0a]">
+          <ElectricBorder
+            color="#a8e524"
+            speed={0.2}
+            chaos={0.08}
+            borderRadius={10}
+            disabled={!isDesktop}
+            className="border border-[#2e2e2e] rounded-[10px] bg-[#0a0a0a] lg:border-none lg:bg-transparent"
+            style={{ display: "block" }}
+          >
             <Editable
+              className="min-h-[calc(100vh-160px)] lg:min-h-[220px]"
               readOnly={readOnly}
               renderLeaf={renderLeaf}
               style={{
                 maxHeight: "80vh",
-                minHeight: "calc(100vh - 160px)", // Fill available space on mobile
                 overflowY: "auto",
                 padding: 16,
                 border: "none",
                 borderRadius: 10,
-                background: "transparent",
+                background: "#0a0a0a",
                 color: "#ededed",
                 lineHeight: 1.75,
                 fontSize: 15,
@@ -264,7 +262,7 @@ export default function Home() {
                 }
               }}
             />
-          </div>
+          </ElectricBorder>
 
           {/* Right-click formatting dropdown */}
           {!readOnly && dropdown.visible && (
@@ -280,22 +278,22 @@ export default function Home() {
           )}
 
           {/* Color picker modal */}
-          <ColorModal
-            open={colorModalOpen}
-            pendingColor={pendingColor}
-            onPendingColorChange={setPendingColor}
-            onApply={() => {
-              setColor(pendingColor);
-              Transforms.setNodes(editor, { color: pendingColor } as any, {
-                match: (n: any) => Text.isText(n),
-                split: true,
-              });
-              setColorModalOpen(false);
-              closeDropdown();
-            }}
-            onCancel={() => setColorModalOpen(false)}
-          />
-        </Slate>
+            <ColorModal
+              open={colorModalOpen}
+              pendingColor={pendingColor}
+              onPendingColorChange={setPendingColor}
+              onApply={() => {
+                setColor(pendingColor);
+                Transforms.setNodes(editor, { color: pendingColor } as any, {
+                  match: (n: any) => Text.isText(n),
+                  split: true,
+                });
+                setColorModalOpen(false);
+                closeDropdown();
+              }}
+              onCancel={() => setColorModalOpen(false)}
+            />
+          </Slate>
       )}
 
       <StatusBar value={value} urlLen={urlLen} readOnly={readOnly} />
