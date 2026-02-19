@@ -198,7 +198,7 @@ export default function Home() {
               minHeight: 220,
               overflowY: "auto",
               padding: 16,
-              border: "1px solid #a8e524",
+              border: "1px solid #4a90e2",
               borderRadius: 10,
               background: "#0a0a0a",
               color: "#ededed",
