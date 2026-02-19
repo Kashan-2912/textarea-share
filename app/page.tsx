@@ -80,16 +80,24 @@ function deserializeFromUrl(hash: string): Descendant[] | null {
 }
 
 export default function Home() {
-    // Dropdown state
-    const [dropdown, setDropdown] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
-    const [selection, setSelection] = useState<any>(null);
+  // Dropdown state
+  const [dropdown, setDropdown] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const [selection, setSelection] = useState<any>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-    // Hide dropdown on click elsewhere
-    useEffect(() => {
-      const hide = () => setDropdown((d) => ({ ...d, visible: false }));
-      window.addEventListener("mousedown", hide);
-      return () => window.removeEventListener("mousedown", hide);
-    }, []);
+  // Hide dropdown only if click is outside dropdown
+  useEffect(() => {
+    const hide = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdown((d) => ({ ...d, visible: false }));
+      }
+    };
+    window.addEventListener("mousedown", hide);
+    return () => window.removeEventListener("mousedown", hide);
+  }, []);
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   // initialValueRef is set once in the effect before Slate mounts.
@@ -99,6 +107,8 @@ export default function Home() {
   const [value, setValue] = useState<Descendant[]>(EMPTY_VALUE);
   const [mounted, setMounted] = useState(false);
   const [color, setColor] = useState("#000000");
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [pendingColor, setPendingColor] = useState("#000000");
 
   /* -------------------- Load From URL -------------------- */
 
@@ -206,6 +216,7 @@ export default function Home() {
           {/* Dropdown menu */}
           {dropdown.visible && (
             <div
+              ref={dropdownRef}
               style={{
                 position: "fixed",
                 left: dropdown.x,
@@ -245,20 +256,82 @@ export default function Home() {
                 }}>
                 Underline
               </button>
-              <button style={{ background: "none", color: "#fff", border: "none", padding: 4, textAlign: "left", cursor: "pointer" }}
+              {/* Color button → opens modal */}
+              <button
+                style={{ background: "none", color: "#fff", border: "none", padding: 4, textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                 onClick={() => {
-                  const color = prompt("Enter hex color (e.g. #ff0000):", "#ededed");
-                  if (color) {
-                    Transforms.setNodes(
-                      editor,
-                      { color },
-                      { match: (n) => Text.isText(n), split: true },
-                    );
-                  }
-                  setDropdown((d) => ({ ...d, visible: false }));
-                }}>
-                Text Color
+                  setPendingColor(color);
+                  setColorModalOpen(true);
+                }}
+              >
+                <span style={{ display: "inline-block", width: 16, height: 16, borderRadius: 3, background: color, border: "1px solid #666" }} />
+                Color
               </button>
+            </div>
+          )}
+
+          {/* ── Color modal ── */}
+          {colorModalOpen && (
+            <div
+              style={{
+                position: "fixed", inset: 0,
+                background: "rgba(0,0,0,0.55)",
+                zIndex: 2000,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  background: "#1e1e1e",
+                  border: "1px solid #444",
+                  borderRadius: 10,
+                  padding: "24px 28px",
+                  minWidth: 220,
+                  boxShadow: "0 8px 32px #000a",
+                  display: "flex", flexDirection: "column", gap: 16,
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#fff", fontWeight: 600, fontSize: 15 }}>Pick a color</span>
+                  <button
+                    onClick={() => setColorModalOpen(false)}
+                    style={{ background: "none", border: "none", color: "#aaa", fontSize: 18, cursor: "pointer", lineHeight: 1 }}
+                  >✕</button>
+                </div>
+
+                {/* Native color input */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <input
+                    type="color"
+                    value={pendingColor}
+                    onChange={(e) => setPendingColor(e.target.value)}
+                    style={{ width: 48, height: 48, border: "none", background: "none", cursor: "pointer", borderRadius: 6 }}
+                  />
+                  <span style={{ color: "#ccc", fontFamily: "monospace", fontSize: 14 }}>{pendingColor}</span>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => setColorModalOpen(false)}
+                    style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #555", background: "none", color: "#ccc", cursor: "pointer" }}
+                  >Cancel</button>
+                  <button
+                    onClick={() => {
+                      setColor(pendingColor);
+                      Transforms.setNodes(
+                        editor,
+                        { color: pendingColor },
+                        { match: (n) => Text.isText(n), split: true },
+                      );
+                      setColorModalOpen(false);
+                      setDropdown((d) => ({ ...d, visible: false }));
+                    }}
+                    style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#4f8ef7", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+                  >Apply</button>
+                </div>
+              </div>
             </div>
           )}
         </Slate>
