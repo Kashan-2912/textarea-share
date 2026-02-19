@@ -29,25 +29,29 @@ export function StatusBar({ value, urlLen, readOnly }: Props) {
       {/* Bottom-left hint */}
       {!readOnly && (
         <div style={{
-          position: "fixed", bottom: 14, left: 16,
-          color: "#3a3a3a", fontSize: 11, lineHeight: 1.5,
+          position: "fixed", bottom: 10, left: 12,
+          color: "#3a3a3a",
           pointerEvents: "none", userSelect: "none",
-        }}>
-          💡 Select text &amp; <strong style={{ color: "#4a4a4a" }}>right-click</strong> to format.
+        }}
+        className="md:max-w-full max-w-50 md:text-sm text-[9px]"
+        >
+          - Select text &amp; <strong style={{ color: "#4a4a4a" }}>right-click</strong> to format. <br />- Share 🔒 to share read-only version.
         </div>
       )}
 
       {/* Bottom-right stats */}
       <div style={{
-        position: "fixed", bottom: 14, right: 16,
+        position: "fixed", bottom: 10, right: 12,
         display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2,
         pointerEvents: "none", userSelect: "none",
-      }}>
-        <span style={{ color: "#444", fontSize: 11 }}>
+      }}
+      className="md:text-sm text-[9px]"
+      >
+        <span style={{ color: "#444" }}>
           {wordCount} {wordCount === 1 ? "word" : "words"} · {charCount} {charCount === 1 ? "char" : "chars"}
         </span>
         {urlLabel && (
-          <span style={{ color: urlColor, fontSize: 11 }}>{urlLabel}</span>
+          <span style={{ color: urlColor }}>{urlLabel}</span>
         )}
       </div>
     </>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { createEditor, Transforms, Text, Descendant, Editor } from "slate";
-import { Slate, Editable, withReact } from "slate-react";
+import { createEditor, Transforms, Text, Descendant } from "slate";
+import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import { withHistory } from "slate-history";
 
 import { withMarkdownShortcuts } from "./lib/markdown-shortcuts";
@@ -13,7 +13,6 @@ import { ColorModal } from "./components/ColorModal";
 import { Toolbar } from "./components/Toolbar";
 import { StatusBar } from "./components/StatusBar";
 import { EditorLeaf } from "./components/EditorLeaf";
-import { EditorElement } from "./components/EditorElement";
 
 /* -------------------- Constants -------------------- */
 
@@ -115,6 +114,9 @@ export default function Home() {
 
   /* ---------- restore saved selection before transforms ---------- */
   const restoreSelection = useCallback(() => {
+    // Re-focus the editor first — without this, Slate won't re-render DOM
+    // changes (headings etc.) because it's in a blurred state.
+    try { ReactEditor.focus(editor); } catch {}
     if (savedSelectionRef.current) {
       Transforms.select(editor, savedSelectionRef.current);
     }
@@ -143,15 +145,6 @@ export default function Home() {
     );
   }, [editor, restoreSelection]);
 
-  const setHeading = useCallback(
-    (type: string) => {
-      restoreSelection();
-      Transforms.setNodes(editor, { type } as any, {
-        match: (n: any) => !Editor.isEditor(n) && Editor.isBlock(editor, n),
-      });
-    },
-    [editor, restoreSelection]
-  );
 
   const copyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -175,12 +168,11 @@ export default function Home() {
   );
 
   /* ---------- renderers (stable refs) ---------- */
-  const renderLeaf    = useCallback((props: any) => <EditorLeaf {...props} />,    []);
-  const renderElement = useCallback((props: any) => <EditorElement {...props} />, []);
+  const renderLeaf = useCallback((props: any) => <EditorLeaf {...props} />, []);
 
   /* ---------- render ---------- */
   return (
-    <main style={{ padding: "80px 40px 60px", maxWidth: 920, margin: "0 auto" }}>
+    <main style={{ padding: "52px 16px 60px", maxWidth: 920, margin: "0 auto" }}>
       <Toolbar
         copied={copied}
         copiedRO={copiedRO}
@@ -201,7 +193,6 @@ export default function Home() {
           <Editable
             readOnly={readOnly}
             renderLeaf={renderLeaf}
-            renderElement={renderElement}
             style={{
               maxHeight: "80vh",
               minHeight: 220,
@@ -237,7 +228,6 @@ export default function Home() {
               color={color}
               onToggleFormat={(f) => { toggleFormat(f); closeDropdown(); }}
               onOpenColorModal={() => { setPendingColor(color); setColorModalOpen(true); }}
-              onSetHeading={(t) => { setHeading(t); closeDropdown(); }}
               onResetFormat={() => { resetFormat(); closeDropdown(); }}
             />
           )}

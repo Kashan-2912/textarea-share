@@ -9,18 +9,24 @@ interface Props {
   onExportHtml: () => void;
 }
 
-// Use longhand border props to avoid React "shorthand/longhand conflict" warning
+// Use longhand border props — avoids React shorthand/longhand conflict warning
 const BTN: React.CSSProperties = {
-  background: "#1e1e1e",
-  color: "#ccc",
+  background: "transparent",
+  color: "#999",
   borderWidth: 1,
   borderStyle: "solid",
-  borderColor: "#333",
-  borderRadius: 6,
-  padding: "5px 12px",
+  borderColor: "#2e2e2e",
+  borderRadius: 5,
+  padding: "3px 8px",
   cursor: "pointer",
-  fontSize: 12,
+  fontSize: 11,
+  whiteSpace: "nowrap",
+  lineHeight: 1.5,
 };
+
+const SEP = (
+  <div style={{ width: 1, height: 14, background: "#2e2e2e", flexShrink: 0 }} />
+);
 
 export function Toolbar({
   copied, copiedRO, readOnly,
@@ -31,57 +37,64 @@ export function Toolbar({
     <div
       style={{
         position: "fixed", top: 0, left: 0, right: 0,
-        background: "#111", borderBottom: "1px solid #222",
-        padding: "8px 20px", display: "flex",
-        alignItems: "center", justifyContent: "space-between", zIndex: 800,
+        background: "#0f0f0f",
+        borderBottom: "1px solid #1e1e1e",
+        padding: "5px 12px",
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 6,
+        zIndex: 800,
+        minHeight: 36,
       }}
     >
-      {/* Left: branding + badge */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ color: "#555", fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>
+      {/* Left: brand + badge */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+        <span style={{ color: "#444", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
           SHARE·PAD
         </span>
         {readOnly && (
           <span style={{
-            background: "#1a3a1a", color: "#6fcf70",
-            fontSize: 11, padding: "2px 8px", borderRadius: 10, fontWeight: 600,
+            background: "#162016", color: "#5aac5a",
+            fontSize: 10, padding: "1px 6px", borderRadius: 8, fontWeight: 600,
           }}>
             View only
           </span>
         )}
       </div>
 
-      {/* Right: actions */}
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      {/* Right: action buttons */}
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+        {/* Export group */}
         <button onClick={onExportTxt}  style={BTN} title="Download as plain text">.txt</button>
         <button onClick={onExportMd}   style={BTN} title="Download as Markdown">.md</button>
         <button onClick={onExportHtml} style={BTN} title="Download as HTML">.html</button>
 
-        <div style={{ width: 1, height: 18, background: "#333", margin: "0 2px" }} />
+        {SEP}
 
-        {/* Share read-only link */}
+        {/* Share read-only */}
         <button
           onClick={onCopyReadOnly}
-          title="Copy a read-only share link"
+          title="Copy a view-only link"
           style={{
             ...BTN,
             ...(copiedRO
-              ? { background: "#1a3a1a", color: "#6fcf70", borderColor: "#2e6b2e" }
-              : {}),
+              ? { background: "#162016", color: "#5aac5a", borderColor: "#2a5a2a" }
+              : { color: "#aaa" }),
           }}
         >
-          {copiedRO ? "✓ Read-only link copied!" : "Share (view only)"}
+          {copiedRO ? "✓ Copied!" : "Share 🔒"}
         </button>
 
-        {/* Copy current link */}
+        {/* Copy editable link */}
         <button
           onClick={onCopy}
           title="Copy link to current content"
           style={{
             ...BTN,
             ...(copied
-              ? { background: "#1a3a1a", color: "#6fcf70", borderColor: "#2e6b2e" }
-              : { background: "#1a2a4a", color: "#7aadff", borderColor: "#2a4a8a" }),
+              ? { background: "#162016", color: "#5aac5a", borderColor: "#2a5a2a" }
+              : { background: "#131c2e", color: "#6a9fd8", borderColor: "#1e3050" }),
           }}
         >
           {copied ? "✓ Copied!" : "Copy link"}

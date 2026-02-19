@@ -6,7 +6,6 @@ interface Props {
   color: string;
   onToggleFormat: (f: string) => void;
   onOpenColorModal: () => void;
-  onSetHeading: (type: string) => void;
   onResetFormat: () => void;
 }
 
@@ -19,14 +18,14 @@ const BTN: React.CSSProperties = {
 const DIVIDER = <div style={{ height: 1, background: "#2e2e2e", margin: "3px 0" }} />;
 
 export const FormattingDropdown = forwardRef<HTMLDivElement, Props>(
-  ({ x, y, color, onToggleFormat, onOpenColorModal, onSetHeading, onResetFormat }, ref) => (
+  ({ x, y, color, onToggleFormat, onOpenColorModal, onResetFormat }, ref) => (
     <div
       ref={ref}
       onMouseDown={(e) => e.stopPropagation()}
       style={{
         position: "fixed", left: x, top: y,
         background: "#1c1c1c", border: "1px solid #3a3a3a",
-        borderRadius: 8, zIndex: 1000, minWidth: 165,
+        borderRadius: 8, zIndex: 1000, minWidth: 155,
         boxShadow: "0 6px 24px #000a", padding: 4,
         display: "flex", flexDirection: "column",
       }}
@@ -44,13 +43,6 @@ export const FormattingDropdown = forwardRef<HTMLDivElement, Props>(
         <span style={{ width: 13, height: 13, borderRadius: 3, background: color, border: "1px solid #555", flexShrink: 0, display: "inline-block" }} />
         Color
       </button>
-
-      {DIVIDER}
-
-      <button style={{ ...BTN, fontSize: 13, fontWeight: 700 }} onClick={() => onSetHeading("heading-one")}>H1 Heading 1</button>
-      <button style={{ ...BTN, fontSize: 13, fontWeight: 600 }} onClick={() => onSetHeading("heading-two")}>H2 Heading 2</button>
-      <button style={{ ...BTN, fontSize: 13, fontWeight: 500 }} onClick={() => onSetHeading("heading-three")}>H3 Heading 3</button>
-      <button style={BTN} onClick={() => onSetHeading("paragraph")}>¶ Paragraph</button>
 
       {DIVIDER}
 
