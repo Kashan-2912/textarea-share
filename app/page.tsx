@@ -363,6 +363,15 @@ export default function Home() {
           )}
         </Slate>
       )}
+
+      {/* Bottom-left hint */}
+      <div style={{
+        position: "fixed", bottom: 14, left: 16,
+        color: "#444", fontSize: 11, lineHeight: 1.5,
+        pointerEvents: "none", userSelect: "none",
+      }}>
+        💡 Select text and <strong style={{ color: "#555" }}>right-click</strong> to bold, italic, underline, colorize, or reset formatting
+      </div>
     </main>
   );
 }
@@ -404,7 +413,7 @@ function Btn({
 function isFormatActive(editor: any, format: string) {
   const [match] = Array.from(
     editor.nodes({
-      match: (n) => n[format] === true,
+      match: (n: any) => n[format] === true,
       universal: true,
     }),
   );
