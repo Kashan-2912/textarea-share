@@ -215,7 +215,7 @@ export default function Home() {
           <ElectricBorder
             color="#a8e524"
             speed={0.2}
-            chaos={0.08}
+            chaos={0.07}
             borderRadius={10}
             disabled={!isDesktop}
             className="border border-[#2e2e2e] rounded-[10px] bg-[#0a0a0a] lg:border-none lg:bg-transparent"

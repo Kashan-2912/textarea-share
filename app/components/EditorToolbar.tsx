@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Editor } from "@tiptap/react";
 import { 
   Bold, Italic, Underline, Strikethrough, Code, 
@@ -15,6 +16,17 @@ interface Props {
 }
 
 export function EditorToolbar({ editor, onOpenColorModal, currentColor }: Props) {
+  const [, setUpdateCount] = useState(0);
+
+  useEffect(() => {
+    if (!editor) return;
+    const onTransaction = () => setUpdateCount((c) => (c + 1) % 1000000);
+    editor.on("transaction", onTransaction);
+    return () => {
+      editor.off("transaction", onTransaction);
+    };
+  }, [editor]);
+
   if (!editor) return null;
 
   const btnClass = (isActive: boolean) => 
